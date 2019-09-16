@@ -1,6 +1,6 @@
 #include "types.h"
-#include "stat.h"
 #include "user.h"
+#include "stat.h"
 #include "fcntl.h"
 
 int
@@ -9,7 +9,7 @@ main(int argc, char * argv[])
   int priority, pid;
 
   if (argc < 3) {
-    printf(2, "Usage: lab2test [pid] [priority]\n");
+    printf(2, "Usage: nice [pid] [priority]\n");
     exit();
   }
 
