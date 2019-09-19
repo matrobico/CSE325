@@ -24,6 +24,8 @@ int main(int argc, char *argv[])
 		}
 		else if(id > 0){ // parent
 			printf(1, "Parent %d creating child %d\n", getpid(), id);
+			// Comment the line below to allow the parent to execute without waiting for a child
+			wait();
 		} else{ // child
 			printf(1, "Child %d created\n", getpid());
 			for(z = 0; z < 80000000.0; z += 0.01)

@@ -99,6 +99,8 @@ exec(char *path, char **argv)
   curproc->sz = sz;
   curproc->tf->eip = elf.entry;  // main
   curproc->tf->esp = sp;
+  // Comment the line below to avoid in order to avoid setting the current nice value to 10 for the process being executed currently.
+  curproc->nice = 10;
   switchuvm(curproc);
   freevm(oldpgdir);
   return 0;
