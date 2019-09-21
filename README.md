@@ -14,7 +14,7 @@ ps	4	RUNNING		10
 ```
 
 ### Task 2
-Output using ps after running lab3test to create a few processes:
+Output using `ps` after running `lab3test` to create a few processes:
  ```bash
 $ lab3test 4 &
 $ Parent creating child 5
@@ -28,7 +28,7 @@ lab3test	4	SLEEPING	10
 ps	6	RUNNING		10
  ```
 
- Output using ps after changing the priority of lab3test using nice:
+ Output using `ps` after changing the priority of `lab3test` using `nice`:
  ```bash
 $ nice 5 18
 $ ps
