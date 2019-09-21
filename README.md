@@ -3,7 +3,7 @@
 ## Lab 3
 
 ### Task 1
-After adding cps(), the initial output after typing ps was:
+After adding cps(), the initial output after typing `ps` was:
 
 ```bash
 $ ps
