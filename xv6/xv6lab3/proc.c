@@ -346,7 +346,7 @@ scheduler(void)
       if (hp_nice > p->nice)
         hp_nice = p->nice;
 
-      // Unomment the lines until linme 363 inclusive (with exception to the comments) to revert back to round robin scheduling.
+      // Uncomment the lines until line 363 inclusive (with exception to the comments) to revert back to round robin scheduling.
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
