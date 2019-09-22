@@ -3,6 +3,7 @@
 ## Lab 3
 
 ### Task 1
+
 After adding cps(), the initial output after typing `ps` was:
 
 ```bash
@@ -14,6 +15,7 @@ ps	4	RUNNING		10
 ```
 
 ### Task 2
+
 Output using `ps` after running `lab3test` to create a few processes:
  ```bash
 $ lab3test 4 &
@@ -47,7 +49,7 @@ The general tendency of the round robin is to rotate the state of the children e
 At first, `ps` outputted this:
 
 ```bash
-ps
+$ ps
 name     pid     state   priority 
 init     1       SLEEEPING       10 
 sh       2       SLEEEPING       10 

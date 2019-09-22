@@ -1,0 +1,11 @@
+ESTIMATE OF TIME TO COMPLETE LAB: 12 hours
+
+          START  | TIME  | LAB   | WORK
+DATE    | TIME   | SPENT | PART  | COMPLETED
+-------------------------------------------
+18/09   | 02:30  | 01:00 | 3     | Read lab, implemented parent waiting in lab3test.c, and produced output to finish task
+18/09   | 06:15  | 03:30 | 4     | Implemented priority scheduling 
+                 ---------
+                   04:30  TOTAL TIME SPENT
+
+Generally this lab was fairly easy. One of the issues I struggled the most with was to avoid errors such as kernel panics and traps that would imediately happen during bootup. Initially I tried to produce a sorted list of processes so that the scheduler could just run the different processes in order. However; this turned out to be a dead end as the scheduler would run into issues with apicids not matching. After several iterations of not realizing how to fix it I decided that the simplest way to combat this issue was to not sort the processes whatsoever and instead find the highest priority process and perform some sort of round robin on all those processes. This would then translate well to lower priority tasks as well as the sceduler will re-evaluate the highest priority every iteration.
