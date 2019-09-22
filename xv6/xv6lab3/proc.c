@@ -342,7 +342,7 @@ scheduler(void)
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
-      
+      // Looking for highest priority process (higher process is lower priority)
       if (hp_nice > p->nice)
         hp_nice = p->nice;
 
@@ -362,7 +362,7 @@ scheduler(void)
       // It should have changed its p->state before coming back.
       // c->proc = 0;
     }
-
+    // Switching to runnable high priority process
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
