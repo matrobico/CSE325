@@ -1,0 +1,28 @@
+ESTIMATE of time to complete lab: 10 hours
+
+Date	Start Time	Time Spent	Lab Part	Work Completed
+----	----------	----------	--------	---------------
+9/15	4:00 PM		2:00		2		Read assignement, added in nice.c
+9/20	2:00 PM		2:00		1		Understanding assignement more and adding in cps()
+9/22	4:00 PM		1:00		4		Double checking partner's work, adding in comments, fixing typos
+9/23	4:00 PM		1:00		1, 2, 3, 4	Finishing up and testing
+
+TOTAL time spent: ~6 hours
+
+Difficulties:
+Understanding the access to the ptable and how to schedule higher priority to come first took a little while for me
+to understand. After an hour looking at the scheduler() function and playing around with the code on my local machine, 
+I was able to implement it and see how it fits together. Adding in cps() took a little longer than it should have, 
+because I just wanted to make sure that I added in everything correctly, and that I didn't add in any extra than I
+needed to. For the most part though, this lab really wasn't too bad. It was really only a few lines of code as long
+as you understood what to do.
+
+To elaborate a bit more, I was thinking that you could access the nice value of the highest priority process by creating
+a copy of the process structure and comparing it's fields to others, but I was had some troubles with this. To make things
+easier, I decided it was easier to just find the highest priority process using an int variable set to an obviously lower
+priority, then switch to that process. Most of the heavy lifting is honestly already implemented in scheduler(). Also, 
+there's really only a few straight forward ways I can see this being implemented.
+
+P.S.
+I ran my own priority scheduling implementation on my local machine, because I wanted to make sure I understood how
+to implement that part myself. Some of the difficulties above are just describing that.
