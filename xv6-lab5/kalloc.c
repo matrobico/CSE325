@@ -20,6 +20,7 @@ struct run {
 struct {
   struct spinlock lock;
   int use_lock;
+  int freepages;
   struct run *freelist;
 } kmem;
 
@@ -33,6 +34,7 @@ kinit1(void *vstart, void *vend)
 {
   initlock(&kmem.lock, "kmem");
   kmem.use_lock = 0;
+  kmem.freepages = 0;
   freerange(vstart, vend);
 }
 
@@ -94,3 +96,16 @@ kalloc(void)
   return (char*)r;
 }
 
+int
+getNumFreePages(void)
+{ 
+  int freepages;
+
+  if(kmem.use_lock)
+    acquire(&kmem.lock);
+  freepages = kmem.freepages;
+  if(kmem.use_lock)
+    release(&kmem.lock);
+
+  return freepages;
+}
