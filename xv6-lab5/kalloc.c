@@ -9,6 +9,9 @@
 #include "mmu.h"
 #include "spinlock.h"
 
+// void incRefCount(uint pa);
+// void decRefCount(uint pa);
+
 void freerange(void *vstart, void *vend);
 extern char end[]; // first address after kernel loaded from ELF file
                    // defined by the kernel linker script in kernel.ld
@@ -22,6 +25,7 @@ struct {
   int use_lock;
   int freepages;
   struct run *freelist;
+  int ref_count[PHYSTOP / PGSIZE];
 } kmem;
 
 // Initialization happens in two phases.
@@ -50,8 +54,10 @@ freerange(void *vstart, void *vend)
 {
   char *p;
   p = (char*)PGROUNDUP((uint)vstart);
-  for(; p + PGSIZE <= (char*)vend; p += PGSIZE)
+  for(; p + PGSIZE <= (char*)vend; p += PGSIZE){
+    kmem.ref_count[V2P(p)/PGSIZE] = 0;
     kfree(p);
+  }
 }
 //PAGEBREAK: 21
 // Free the page of physical memory pointed at by v,
@@ -66,16 +72,23 @@ kfree(char *v)
   if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
     panic("kfree");
 
-  // Fill with junk to catch dangling refs.
-  memset(v, 1, PGSIZE);
+  if (kmem.ref_count[V2P(v)/PGSIZE] > 0)
+    decRefCount(V2P(v));
+  else {
+    // Fill with junk to catch dangling refs.
+    memset(v, 1, PGSIZE);
 
-  if(kmem.use_lock)
-    acquire(&kmem.lock);
-  r = (struct run*)v;
-  r->next = kmem.freelist;
-  kmem.freelist = r;
-  if(kmem.use_lock)
-    release(&kmem.lock);
+    if(kmem.use_lock)
+      acquire(&kmem.lock);
+    r = (struct run*)v;
+    r->next = kmem.freelist;
+    kmem.freelist = r;
+
+    kmem.freepages += 1;
+
+    if(kmem.use_lock)
+      release(&kmem.lock);
+  }
 }
 
 // Allocate one 4096-byte page of physical memory.
@@ -91,8 +104,13 @@ kalloc(void)
   r = kmem.freelist;
   if(r)
     kmem.freelist = r->next;
+
+  kmem.ref_count[V2P((char *)r)/PGSIZE] += 1;
+  kmem.freepages -= 1;
+
   if(kmem.use_lock)
     release(&kmem.lock);
+
   return (char*)r;
 }
 
@@ -108,4 +126,47 @@ getNumFreePages(void)
     release(&kmem.lock);
 
   return freepages;
+}
+
+void incRefCount(uint pa){
+  if (pa < (uint)V2P(end) || pa > PHYSTOP)
+    panic("kfree");
+  
+  if (kmem.use_lock)
+    acquire(&kmem.lock);
+
+  kmem.ref_count[pa/PGSIZE] += 1;
+
+  if (kmem.use_lock)
+    release(&kmem.lock);
+
+}
+
+void decRefCount(uint pa){
+  if (pa < (uint)V2P(end) || pa > PHYSTOP)
+    panic("kfree");
+  
+  if (kmem.use_lock)
+    acquire(&kmem.lock);
+
+  kmem.ref_count[pa/PGSIZE]  -= 1;
+
+  if (kmem.use_lock)
+    release(&kmem.lock);
+
+}
+
+uint getRefCount(uint pa){
+
+  uint refcnt;
+
+  if (kmem.use_lock)
+    acquire(&kmem.lock);
+
+  refcnt = kmem.ref_count[pa/PGSIZE];
+  
+  if (kmem.use_lock)
+    release(&kmem.lock);
+
+  return refcnt;
 }
