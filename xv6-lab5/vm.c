@@ -429,13 +429,23 @@ void handle_pgflt() {
   }
 }
 
+// Similar to copyuvm. Starts off by mapping the kernel
+// to the child, then maps the parent's physical frame
+// read-only in both the parent and the child. it will
+// return the address of the new page table just like
+// copyuvm does.
 pde_t* copyuvm_cow(pde_t* pgdir, uint sz){
+  // Just like copyuvm, but without char *mem, 
+  // since we aren't cloning user-mode memory
   pde_t *d;
   pte_t *pte;
   uint pa, i;
 
+  // return value of setupkvm is page directory for child process
   if((d = setupkvm()) == 0)
     return 0;
+  // reading parent's page table entry (physical frame and protection
+  // bits), but no allocation here, only mapping of parent's read-only
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
       panic("copyuvm: pte should exist");
@@ -443,20 +453,25 @@ pde_t* copyuvm_cow(pde_t* pgdir, uint sz){
       panic("copyuvm: page not present");
     pa = PTE_ADDR(*pte);
     // flags = PTE_FLAGS(*pte);
-
+    
+    // clearing the write flag so that the parent's page is read-only
     *pte &= ~PTE_W;
     
+    // mapping the child page table (no need for allocation related code)
+    // to the physical address of the parent
     if (mappages(d, (void *)i, PGSIZE, pa, PTE_FLAGS(*pte)) < 0)
       goto bad;
 
-    incRefCount(pa);
+    incRefCount(pa);    // paren't physical frame now maps to the child too
   }
 
+  // re-installing page table since changes have been made
   lcr3(V2P(pgdir));
 
   return d;
 
   bad:
+  // still re-installing page table here because we flushed flags
   lcr3(V2P(pgdir));
   freevm(d);
   return 0;

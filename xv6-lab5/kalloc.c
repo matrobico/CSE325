@@ -20,10 +20,16 @@ struct run {
   struct run *next;
 };
 
+// Structure containing (and pointing to) a list of free pages within
+// memory. Basically, a wrapper for the free list and locks
 struct {
   struct spinlock lock;
   int use_lock;
+  // total number of free pages
   int freepages;
+  // Reference count for each physical page descriptor
+  // Top physical memory divided by pagesize will give total number
+  // of physical page frames that could have a reference count
   struct run *freelist;
   int ref_count[PHYSTOP / PGSIZE];
 } kmem;
@@ -55,6 +61,7 @@ freerange(void *vstart, void *vend)
   char *p;
   p = (char*)PGROUNDUP((uint)vstart);
   for(; p + PGSIZE <= (char*)vend; p += PGSIZE){
+    // All reference counts set to 0 on startup
     kmem.ref_count[V2P(p)/PGSIZE] = 0;
     kfree(p);
   }
@@ -64,6 +71,8 @@ freerange(void *vstart, void *vend)
 // which normally should have been returned by a
 // call to kalloc().  (The exception is when
 // initializing the allocator; see kinit above.)
+// As in the previous functions, char *v is a pointer
+// to physical memory represented by a virtual address
 void
 kfree(char *v)
 {
@@ -72,6 +81,10 @@ kfree(char *v)
   if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
     panic("kfree");
 
+  // If the reference count is higher than 0, then we should only
+  // decrement the count by 1. However, if the reference count is
+  // 0, then nothing points to the page and the resources should
+  // be freed
   if (kmem.ref_count[V2P(v)/PGSIZE] > 0)
     decRefCount(V2P(v));
   else {
@@ -102,11 +115,18 @@ kalloc(void)
   if(kmem.use_lock)
     acquire(&kmem.lock);
   r = kmem.freelist;
-  if(r)
+  if(r) {
     kmem.freelist = r->next;
+    // free pages should go down when you allocate one
+    kmem.freepages -= 1;
+    // Number of references to that page gets initialized to 1 on allocation
+    // We must use the struct r and cast (char *) to it, since r currently
+    // represents the next free physical page in freelist (at this point
+    // during the allocation)
+    // * see page 33 in the xv6 documentation book for details
+    kmem.ref_count[V2P((char *)r)/PGSIZE] += 1;
 
-  kmem.ref_count[V2P((char *)r)/PGSIZE] += 1;
-  kmem.freepages -= 1;
+  }
 
   if(kmem.use_lock)
     release(&kmem.lock);
@@ -119,6 +139,7 @@ getNumFreePages(void)
 { 
   int freepages;
 
+  // Acquiring the lock and getting number of free pages
   if(kmem.use_lock)
     acquire(&kmem.lock);
   freepages = kmem.freepages;
@@ -128,10 +149,13 @@ getNumFreePages(void)
   return freepages;
 }
 
+// param uint pa is the phyiscal address
 void incRefCount(uint pa){
+  // error checking copied from kfree
+  // checking bounds
   if (pa < (uint)V2P(end) || pa > PHYSTOP)
     panic("kfree");
-  
+  // acquiring lock and incrementing reference count
   if (kmem.use_lock)
     acquire(&kmem.lock);
 
@@ -142,10 +166,13 @@ void incRefCount(uint pa){
 
 }
 
+// param uint pa is the physical address
 void decRefCount(uint pa){
+  // error checking copied from kfree
+  // checking bounds
   if (pa < (uint)V2P(end) || pa > PHYSTOP)
     panic("kfree");
-  
+  // acquiring lock and decrementing refernce count
   if (kmem.use_lock)
     acquire(&kmem.lock);
 
@@ -156,6 +183,8 @@ void decRefCount(uint pa){
 
 }
 
+// helper function to return reference count
+// of a physical page
 uint getRefCount(uint pa){
 
   uint refcnt;
