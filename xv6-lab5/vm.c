@@ -446,39 +446,50 @@ void handle_pgflt() {
     panic("Page fault");
   }
 
-  if (va >> 20 >= KERNBASE || va < 0){
+  if ((va >= KERNBASE && va <= KERNBASE + PHYSTOP) || va < 0){
     cprintf("Page fault: Illegal address.\nKilling process: %d, %s\n", cur_proc->pid, cur_proc->name);
     kill(cur_proc->pid);
     return;
   }
 
-  if ((pte = walkpgdir(cur_proc->pgdir, (void *)va, 0)) == 0){
+  pte = walkpgdir(cur_proc->pgdir, (void *)PGROUNDDOWN(va), 0);
+
+  if (!(*pte & PTE_P)){
     cprintf("Page fault: NULL PTE.\nKilling process: %d, %s\n", cur_proc->pid, cur_proc->name);
     kill(cur_proc->pid);
     return;
   }
 
   uint pa = PTE_ADDR(*pte);
-  ref = getRefCount(pa);
-  char *np;
 
-  if (ref == 1) {       // Restore write permission to page
-    *pte |= PTE_W;
-  } else if (ref > 1) { // Copy the page and setup 
+  if (cur_proc->tf->err != 0){
+    ref = getRefCount(pa);
 
-    if ((np = kalloc()) == 0){
-      kill(cur_proc->pid);
-      return;
+    // cprintf("err: %d\tva: %x\tref: %d\n", cur_proc->tf->err, va, ref);
+
+    if (ref == 1) {       // Restore write permission to page
+      *pte |= PTE_W;
+    } else if (ref > 1) { // Copy the page and setup 
+      char *np;
+
+      if ((np = kalloc()) == 0){
+        kill(cur_proc->pid);
+        return;
+      }
+
+      memmove(np, (char *)P2V(pa), PGSIZE);
+
+      *pte = V2P(np) | PTE_FLAGS(*pte) | PTE_U | PTE_W | PTE_P;
+
+      decRefCount(pa);
+    } else {
+      
     }
 
-    memmove(np, (char *)P2V(pa), PGSIZE);
-
-    *pte = V2P(np) | PTE_FLAGS(*pte) | PTE_U | PTE_W | PTE_P;
-
-    decRefCount(pa);
+    lcr3(V2P(cur_proc->pgdir));
   }
 
-  lcr3(V2P(cur_proc->pgdir));
+  // TODO: FIX LOOPING DUE TO 0 REFERENCES
 
   return;
 }
