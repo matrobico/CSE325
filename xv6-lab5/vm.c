@@ -446,7 +446,7 @@ void handle_pgflt() {
     panic("Page fault");
   }
 
-  if (va >= KERNBASE || va < 0){
+  if (va >> 20 >= KERNBASE || va < 0){
     cprintf("Page fault: Illegal address.\nKilling process: %d, %s\n", cur_proc->pid, cur_proc->name);
     kill(cur_proc->pid);
     return;
@@ -478,7 +478,7 @@ void handle_pgflt() {
     decRefCount(pa);
   }
 
-  lcr3(pa);
+  lcr3(V2P(cur_proc->pgdir));
 
   return;
 }
