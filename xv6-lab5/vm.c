@@ -523,6 +523,8 @@ void handle_pgflt() {
   }
 
   lcr3(pa);
+
+  return;
 }
 
 //PAGEBREAK!
