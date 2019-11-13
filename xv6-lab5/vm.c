@@ -478,6 +478,53 @@ pde_t* copyuvm_cow(pde_t* pgdir, uint sz){
 
 }
 
+void handle_pgflt() {
+  struct proc * cur_proc = myproc();
+  uint va = rcr2();
+  pte_t *pte;
+
+  int ref;
+
+  if (cur_proc == 0){
+    cprintf("Page fault: No user process\n");
+    panic("Page fault");
+  }
+
+  if (va >= KERNBASE || va < 0){
+    cprintf("Page fault: Illegal address.\nKilling process: %d, %s\n", cur_proc->pid, cur_proc->name);
+    kill(cur_proc->pid);
+    return;
+  }
+
+  if ((pte = walkpgdir(cur_proc->pgdir, (void *)va, 0)) == 0){
+    cprintf("Page fault: NULL PTE.\nKilling process: %d, %s\n", cur_proc->pid, cur_proc->name);
+    kill(cur_proc->pid);
+    return;
+  }
+
+  uint pa = PTE_ADDR(*pte);
+  ref = getRefCount(pa);
+  char *np;
+
+  if (ref == 1) {       // Restore write permission to page
+    *pte |= PTE_W;
+  } else if (ref > 1) { // Copy the page and setup 
+
+    if ((np = kalloc()) == 0){
+      kill(cur_proc->pid);
+      return;
+    }
+
+    memmove(np, (char *)P2V(pa), PGSIZE);
+
+    *pte = V2P(np) | PTE_FLAGS(*pte) | PTE_U | PTE_W | PTE_P;
+
+    decRefCount(pa);
+  }
+
+  lcr3(pa);
+}
+
 //PAGEBREAK!
 // Blank page.
 //PAGEBREAK!
