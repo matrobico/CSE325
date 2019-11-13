@@ -385,50 +385,6 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
   return 0;
 }
 
-void handle_pgflt() {
-  struct proc *cur_proc = myproc();
-  pte_t* pte;
-  uint start_addr;
-  uint faulty_addr = rcr2();
-
-  start_addr = PGROUNDDOWN(faulty_addr);
-
-  // Faulty address is within the illegal range
-  if (start_addr >= KERNBASE || (pte = walkpgdir(cur_proc->pgdir, &start_addr, 0)) == 0){
-    cprintf("Page fault in illegal address.\n Killing process: %d, %s\n", cur_proc->pid, cur_proc->name);
-    kill(cur_proc->pid);
-  }
-
-  // TODO: Double check that there are no false positives
-
-  // TODO: Figure out if the fault happened due to a Copy-on-Write or not
-
-  if (cur_proc->tf->err){
-    if (cur_proc->pgdir == 0){ // On COW error, the page dir is set to 0 in fork.
-      uint pa = PTE_ADDR(*pte);
-      char* virt_addr = P2V(pa);
-      uint flags = PTE_FLAGS(*pte);
-
-      if (getRefCount(V2P(virt_addr)) > 1){
-        char* new_page = kalloc();
-        memmove(new_page, virt_addr, PGSIZE);
-        uint new_page_addr = V2P(new_page);
-
-        *pte = new_page_addr | flags | PTE_P | PTE_W;
-
-        lcr3(faulty_addr);
-
-        decRefCount(V2P(virt_addr));
-
-      } else {
-        *pte |= PTE_W;
-
-        lcr3(faulty_addr);
-      }
-    }
-  }
-}
-
 // Similar to copyuvm. Starts off by mapping the kernel
 // to the child, then maps the parent's physical frame
 // read-only in both the parent and the child. it will
