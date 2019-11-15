@@ -10,6 +10,8 @@ DATE    | TIME   | SPENT | PART  | COMPLETED
 11/12   | 04:00  | 01:00 | 5     | Implemented exercise 5
 11/12   | 06:30  | 02:30 | 4,5   | Continued debugging of exercise 4 with respect to exercise 5
 11/12   | 08:30  | 00:20 | 4     | Continued debugging of exercise 4 with respect to exercise 5
-11/14   | 04:00  | 01:00 | 4     | Continued debugging of exercise 4 with respect to exercise 5
+11/14   | 04:00  | 01:30 | 4     | Continued debugging of exercise 4 with respect to exercise 5
                  ---------
-                   04:30  TOTAL TIME SPENT
+                   14:25  TOTAL TIME SPENT
+
+The main issue with this lab was to debug the bug that occurred with exercise 5 after implementing the other exercises. While we are fairly confident in the fact that our exercise 5 is correct along with all the other exercises, there seems to be a bug that we are unable to locate that creates an edge case where the system goes into an infinite loop trying to find the different pages in memory. This bug was what we spend the most time on as the documentation was sparse. This along with the fact that there are numerous systems that interact with each other made it so that the desired output is not what it is supposed to be.
